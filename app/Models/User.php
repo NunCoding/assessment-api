@@ -35,6 +35,10 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -47,4 +51,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function assessmentsTaken()
+    {
+        return $this->hasMany(UserAssessment::class);
+    }
+
+    public function responses()
+    {
+        return $this->hasMany(Response::class);
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
 }
