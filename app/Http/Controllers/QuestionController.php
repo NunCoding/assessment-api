@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Option;
-use App\Models\Question;
-use Dotenv\Validator;
+use App\Models\ActivityLog;
+use App\Models\Analytic;
+use App\Models\Assessment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Models\Question;
+use App\Models\Option;
+
 
 class QuestionController extends Controller
 {
@@ -38,7 +42,7 @@ class QuestionController extends Controller
             'assessment_id' => 'required|exists:assessments,id'
         ]);
 
-        if ($validator->false()){
+        if ($validator->fails()){
             return response()->json([
                'message' => 'Validation error',
                'error' => $validator->errors()
@@ -54,6 +58,8 @@ class QuestionController extends Controller
                 'explanation' => $request->explanation,
             ]);
 
+            // Create options
+            $options = [];
             foreach ($request->options as $index => $optionText){
                 Option::create([
                     'question_id' => $question->id,
@@ -62,11 +68,26 @@ class QuestionController extends Controller
                 ]);
             }
 
+            Option::insert($options);
+
+            // Update analytics
+            Analytic::firstOrCreate([])->increment('questions_created');
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'activity_type' => 'question_created',
+                'description' => 'Added question to assessment',
+                'metadata' => [
+                    'assessment_id' => $request->assessment_id,
+                    'question_id' => $question->id
+                ]
+            ]);
+
             DB::commit();
 
             return response()->json([
                 'message' => 'Question created successfully',
-                'data' => $question->load('options')
             ],201);
 
         }catch (\Exception $e){

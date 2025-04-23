@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Symfony\Component\Console\Question\Question;
+use App\Models\Question;
 
 class Assessment extends Model
 {
@@ -25,11 +25,18 @@ class Assessment extends Model
         'tags' => 'array',
     ];
 
-    public function category(){
-        return $this->belongsTo(Category::class,"categories_id");
+    public function category()
+    {
+        return $this->belongsTo(Category::class, "categories_id");
     }
 
-    public function question(){
+    public function questions()
+    {
         return $this->hasMany(Question::class);
+    }
+
+    public function userAttempts()
+    {
+        return $this->hasMany(UserAssessment::class);
     }
 }

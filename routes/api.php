@@ -12,14 +12,21 @@ Route::get('/test', function () {
     return response()->json(['message' => 'API is working!']);
 });
 
-Route::get('/assessments', [AssessmentController::class, 'index']);
-Route::get('/assessments/list',[AssessmentController::class,'list']);
-Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
-Route::post('/assessments', [AssessmentController::class, 'store']);
+// assessment
+Route::middleware('auth:sanctum')->group(function (){
+    Route::get('/assessments', [AssessmentController::class, 'index']);
+    Route::get('/assessments/list',[AssessmentController::class,'list']);
+    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
+    Route::post('/assessments', [AssessmentController::class, 'store']);
+    Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
 
-// category
-Route::get('/category',[CategoryController::class,"index"]);
+    // question
+    Route::get('/assessment/{assessmentId}/question',[QuestionController::class,'index']);
+    Route::post('/questions',[QuestionController::class,'store']);
 
+    // category
+    Route::get('/category',[CategoryController::class,"index"]);
+});
 
 // upload
 Route::post('/upload',[FileUploadController::class,'upload']);
@@ -28,6 +35,4 @@ Route::post('/upload',[FileUploadController::class,'upload']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// question
-Route::get('/assessment/{assessmentId}/question',[QuestionController::class,'index']);
-Route::post('/questions',[QuestionController::class,'store']);
+

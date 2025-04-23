@@ -12,10 +12,23 @@ class Question extends Model
     protected $fillable = [
         'assessment_id',
         'title',
+        'question',
         'explanation'
     ];
 
-    public function options(){
+    public function assessment()
+    {
+        return $this->belongsTo(Assessment::class);
+    }
+
+    public function options()
+    {
         return $this->hasMany(Option::class);
     }
+
+    public function responses()
+    {
+        return $this->hasMany(Response::class);
+    }
+
 }
