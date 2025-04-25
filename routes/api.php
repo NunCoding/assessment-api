@@ -13,16 +13,22 @@ Route::get('/test', function () {
 });
 
 // assessment
+    Route::get('/assessment/category',[AssessmentController::class,"getCategory"]);
 Route::middleware('auth:sanctum')->group(function (){
     Route::get('/assessments', [AssessmentController::class, 'index']);
     Route::get('/assessments/list',[AssessmentController::class,'list']);
-    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
+//    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
     Route::post('/assessments', [AssessmentController::class, 'store']);
+    Route::get('/assessments/popular', [AssessmentController::class, 'topPopularAssessments']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
 
+
     // question
-    Route::get('/assessment/{assessmentId}/question',[QuestionController::class,'index']);
+    Route::get('/assessment/{assessmentId}/question',[QuestionController::class,'show']);
+    Route::get('/questions/list',[QuestionController::class,'index']);
     Route::post('/questions',[QuestionController::class,'store']);
+    Route::put('/questions/{id}',[QuestionController::class,'update']);
+    Route::delete('/questions/{id}/delete',[QuestionController::class,'destroy']);
 
     // category
     Route::get('/category',[CategoryController::class,"index"]);
