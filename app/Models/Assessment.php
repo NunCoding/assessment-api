@@ -25,6 +25,11 @@ class Assessment extends Model
         'tags' => 'array',
     ];
 
+    public function userAssessments()
+    {
+        return $this->hasMany(UserAssessment::class);
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class, "categories_id");

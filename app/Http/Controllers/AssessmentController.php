@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAssessmentRequest;
 use App\Models\Assessment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AssessmentController extends Controller
 {
@@ -71,6 +72,78 @@ class AssessmentController extends Controller
     public function list(){
         $listAssessment = Assessment::select('id','title')->get();
         return response()->json($listAssessment);
+    }
+
+    public function topPopularAssessments()
+    {
+        $assessments = Assessment::with('category')
+            ->withCount('userAssessments')
+            ->orderByDesc('user_assessments_count')
+            ->take(3)
+            ->get()
+            ->map(function ($assessment) {
+                return [
+                    'id' => $assessment->id,
+                    'title' => $assessment->title,
+                    'description' => $assessment->description,
+                    'category' => $assessment->category->name ?? null,
+                    'image' => $assessment->image,
+                    'users' => $this->formatNumber($assessment->user_assessments_count),
+                    'timeEstimate' => $assessment->time_estimate,
+                ];
+            });
+
+        return response()->json($assessments);
+    }
+
+    public function getCategory(){
+        $assessments = DB::table('assessments')
+            ->select(
+                'assessments.id',
+                'assessments.title',
+                'assessments.description',
+                'assessments.image',
+                'assessments.rating',
+                'assessments.difficulty',
+                'assessments.time_estimate',
+                'assessments.tags',
+                DB::raw('(SELECT COUNT(*) FROM user_assessments WHERE user_assessments.assessment_id = assessments.id) as user_count')
+            )
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($assessment) {
+                // Helper function to format user count like "12.5k"
+                $formatUserCount = function ($number) {
+                    if ($number >= 1000) {
+                        return number_format($number / 1000, 1) . 'k';
+                    }
+                    return (string) $number;
+                };
+
+                return [
+                    'id' => $assessment->id,
+                    'title' => $assessment->title,
+                    'description' => $assessment->description,
+                    'image' => $assessment->image ?? '',
+                    'rating' => round($assessment->rating ?? 0, 1),
+                    'difficulty' => $assessment->difficulty ?? 'Unknown',
+                    'duration' => (int) $assessment->time_estimate,
+                    'tags' => $assessment->tags ? array_map('trim', explode(',', $assessment->tags)) : [],
+                    'users' => $formatUserCount($assessment->user_count),
+                ];
+            });
+
+        return response()->json($assessments);
+    }
+
+    private function formatNumber($number)
+    {
+        if ($number >= 1000000) {
+            return round($number / 1000000, 1) . 'M';
+        } elseif ($number >= 1000) {
+            return round($number / 1000, 1) . 'k';
+        }
+        return (string) $number;
     }
 
 
