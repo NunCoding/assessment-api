@@ -47,7 +47,7 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string',
             'options' => 'required|array|min:2',
             'options.*' => 'required|string',
@@ -56,32 +56,34 @@ class QuestionController extends Controller
             'assessment_id' => 'required|exists:assessments,id'
         ]);
 
-        if ($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
-               'message' => 'Validation error',
-               'error' => $validator->errors()
-            ],422);
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         try {
             DB::beginTransaction();
 
+            // Create question
             $question = Question::create([
                 'assessment_id' => $request->assessment_id,
                 'title' => $request->title,
                 'explanation' => $request->explanation,
             ]);
 
-            // Create options
+            // Prepare options data
             $options = [];
-            foreach ($request->options as $index => $optionText){
-                Option::create([
+            foreach ($request->options as $index => $optionText) {
+                $options[] = [
                     'question_id' => $question->id,
                     'option_text' => $optionText,
-                    'is_correct' => $index === $request->correctAnswer,
-                ]);
+                    'is_correct' => $index == $request->correctAnswer,
+                ];
             }
 
+            // Bulk insert options
             Option::insert($options);
 
             // Update analytics
@@ -102,9 +104,13 @@ class QuestionController extends Controller
 
             return response()->json([
                 'message' => 'Question created successfully',
-            ],201);
+                'data' => [
+                    'question_id' => $question->id,
+                    'correct_answer_index' => $request->correctAnswer
+                ]
+            ], 201);
 
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'message' => 'Error creating question',
@@ -132,20 +138,20 @@ class QuestionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string',
             'options' => 'sometimes|required|array|min:2',
-            'options.*' => 'required_with:options|string',
-            'correctAnswer' => 'sometimes|required|integer|min:0',
+            'options.*' => 'required|string',
+            'correctAnswer' => 'required_with:options|integer|min:0',
             'explanation' => 'nullable|string',
             'assessment_id' => 'sometimes|required|exists:assessments,id'
         ]);
 
-        if ($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
                 'errors' => $validator->errors(),
-            ]);
+            ], 422);
         }
 
         try {
@@ -154,7 +160,7 @@ class QuestionController extends Controller
             // Find the question
             $question = Question::findOrFail($id);
 
-            // Update question fields
+            // Update question fields - changed 'question' to 'title' to match your table
             $question->update([
                 'title' => $request->input('title', $question->title),
                 'explanation' => $request->input('explanation', $question->explanation),
@@ -163,23 +169,26 @@ class QuestionController extends Controller
 
             // Handle options update if provided
             if ($request->has('options')) {
-                $newCorrectIndex = $request->correctAnswer;
-                $existingOptionIds = [];
 
-                foreach ($request->options as $index => $text) {
-                    $option = Option::create([
+                // First delete all existing options for this question
+                Option::where('question_id', $question->id)->delete();
+
+                // Then create new options
+                $newCorrectIndex = (int) $request->correctAnswer;
+
+                foreach ($request->options as $index => $optionText) {
+                    $isCorrect = (int) $index === $newCorrectIndex;
+
+                    \Log::info("Creating option: {$optionText} | Index: {$index} | Correct Index: {$newCorrectIndex} | is_correct: " . ($isCorrect ? 'true' : 'false'));
+
+                    Option::create([
                         'question_id' => $question->id,
-                        'option_text' => $text,
-                        'is_correct' => $index === $newCorrectIndex
+                        'option_text' => $optionText,
+                        'is_correct' => $isCorrect
                     ]);
-                    $existingOptionIds[] = $option->id;
                 }
 
 
-                // Delete options that weren't included in the update
-                Option::where('question_id', $question->id)
-                    ->whereNotIn('id', $existingOptionIds)
-                    ->delete();
             }
 
             // Log activity
@@ -197,10 +206,14 @@ class QuestionController extends Controller
 
             return response()->json([
                 'message' => 'Question updated successfully',
-                'data' => new QuestionResource($question->fresh(['options']))
+                'data' => [
+                    'question' => $question,
+                    'options' => $question->options,
+                    'correct_answer' => $request->correctAnswer
+                ]
             ], 200);
 
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'message' => 'Error updating question',
