@@ -10,8 +10,13 @@ class Option extends Model
     use HasFactory;
 
     protected $fillable = [
-        'question_id', 'option_text', 'currectAnwser', 'explanation'
+        'question_id', 'option_text', 'is_correct', 'explanation'
     ];
+
+    protected $casts = [
+        'is_correct' => 'boolean',
+    ];
+
 
     public function question()
     {

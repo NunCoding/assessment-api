@@ -14,12 +14,12 @@ Route::get('/test', function () {
 
 // assessment
     Route::get('/assessment/category',[AssessmentController::class,"getCategory"]);
+    Route::get('/assessments/popular', [AssessmentController::class, 'topPopularAssessments']);
 Route::middleware('auth:sanctum')->group(function (){
     Route::get('/assessments', [AssessmentController::class, 'index']);
     Route::get('/assessments/list',[AssessmentController::class,'list']);
 //    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
     Route::post('/assessments', [AssessmentController::class, 'store']);
-    Route::get('/assessments/popular', [AssessmentController::class, 'topPopularAssessments']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
 
 
