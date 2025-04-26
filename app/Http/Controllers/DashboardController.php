@@ -138,6 +138,31 @@ class DashboardController extends Controller
         return response()->json($assessments);
     }
 
+    public function getUsersOverview(Request $request)
+    {
+        $search = $request->query('search');
+        $userQuery = User::withCount('userAssessments');
+        if ($search) {
+            $userQuery->where(function ($query) use ($search) {
+                $query->where('name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('email', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        $users = $userQuery
+            ->paginate(10)
+            ->through(function ($user){
+               return [
+                  'name' => $user->name,
+                  'email' => $user->email,
+                  'role' => ucfirst($user->role),
+                  'status' => 'active',
+                  'joined' => $user->created_at ? $user->created_at->format('M d, Y') : 'N/A',
+               ] ;
+            });
+        return response()->json($users);
+    }
+
 
     /**
      * Helper function

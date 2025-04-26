@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(UserAssessment::class);
     }
 
+    public function userAssessments()
+    {
+        return $this->hasMany(UserAssessment::class);
+    }
+
     public function responses()
     {
         return $this->hasMany(Response::class);
