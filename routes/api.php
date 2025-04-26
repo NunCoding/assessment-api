@@ -3,8 +3,10 @@
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\UserAssessmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function (){
 //    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
     Route::post('/assessments', [AssessmentController::class, 'store']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
+    Route::post('/user-assessment/submit',[UserAssessmentController::class,"submitResult"]);
 
 
     // question
@@ -40,5 +43,13 @@ Route::post('/upload',[FileUploadController::class,'upload']);
 // user
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// stats
+
+Route::get('/statistics',[DashboardController::class,"getStatistics"]);
+Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+Route::get('dashboard/activity',[DashboardController::class,"getRecentActivities"]);
+Route::get('dashboard/popular-assessments',[DashboardController::class,'getAssessments']);
+
 
 

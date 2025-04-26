@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
@@ -25,9 +26,21 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'student',  // Default role
+            'role' => 'student',
         ]);
         $token = $user->createToken('auth_token')->plainTextToken;
+        if ($user)
+        {
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'activity_type' => 'user_registration',
+                'description' => 'New user registered.',
+                'metadata' => [
+                    'email' => $user->email,
+                    'registered_at' => now(),
+                ]
+            ]);
+        }
         return response()->json(['message' => 'User registered successfully', 'user' => $user,'token' => $token], 201);
     }
 

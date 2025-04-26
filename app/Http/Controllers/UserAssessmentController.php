@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Analytic;
 use App\Models\UserAssessment;
 use Illuminate\Http\Request;
@@ -88,6 +89,46 @@ class UserAssessmentController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function submitResult(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'assessment_id' => 'required|exists:assessments,id',
+            'score' => 'nullable|integer|min:0',
+            'completion_time' => 'nullable|integer|min:0',
+        ]);
+
+        // Update or create to avoid duplicate entries
+        $userAssessment = UserAssessment::updateOrCreate(
+            [
+                'user_id' => $validated['user_id'],
+                'assessment_id' => $validated['assessment_id'],
+            ],
+            [
+                'score' => $validated['score'],
+                'completion_time' => $validated['completion_time'],
+            ]
+        );
+
+        if ($userAssessment)
+        {
+            ActivityLog::create([
+                'user_id' => auth()->id() ?? $validated['user_id'], // fallback if no auth
+                'activity_type' => 'assessment_submitted',
+                'description' => 'User submitted assessment result.',
+                'metadata' => [
+                    'assessment_id' => $validated['assessment_id'],
+                    'score' => $validated['score'],
+                    'completion_time' => $validated['completion_time'],
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Assessment result submitted successfully.',
+        ]);
     }
 
     protected function updateAnalytics($score, $completionTime)
