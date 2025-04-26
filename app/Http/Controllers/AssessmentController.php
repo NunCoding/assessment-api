@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class AssessmentController extends Controller
 {
+
     public function store(StoreAssessmentRequest $request){
         $validated = $request->validated();
 
@@ -89,6 +90,7 @@ class AssessmentController extends Controller
                     'category' => $assessment->category->name ?? null,
                     'image' => $assessment->image,
                     'users' => $this->formatNumber($assessment->user_assessments_count),
+                    'difficulty' => $assessment->difficulty,
                     'timeEstimate' => $assessment->time_estimate,
                 ];
             });
