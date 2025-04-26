@@ -163,6 +163,37 @@ class DashboardController extends Controller
         return response()->json($users);
     }
 
+    public function getUserPerformance()
+    {
+        $totalAssessments = Assessment::count();
+        $user = User::with(['userAssessments'],['activityLogs'])
+            ->get()
+            ->map(function ($user) use ($totalAssessments) {
+               $assessmentTaken = $user->userAssessments->count();
+               $avgScore = $assessmentTaken > 0
+                   ? round($user->userAssessments->avg('score'))
+                   : 0;
+                $completionRate = $totalAssessments > 0
+                    ? round(($assessmentTaken / $totalAssessments) * 100)
+                    : 0;
+
+               $lastActivity = optional($user->activityLogs->sortByDesc('created-at')->first())->created_at;
+               $lastActive = $lastActivity
+                   ? Carbon::parse($lastActivity)->diffForHumans()
+                   : 'N/A';
+
+               return [
+                 'name' => $user->name,
+                 'email' => $user->email,
+                 'assessment_token' => $assessmentTaken,
+                 'avg_score' => $avgScore,
+                 'completion_rate' => $completionRate,
+                 'last_active' => $lastActive,
+               ];
+            });
+        return response()->json($user);
+    }
+
 
     /**
      * Helper function
