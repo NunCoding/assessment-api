@@ -77,4 +77,9 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function assessments()
+    {
+        return $this->hasMany(Assessment::class, 'created_by');
+    }
+
 }
