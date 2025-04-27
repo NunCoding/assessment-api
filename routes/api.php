@@ -47,8 +47,8 @@ Route::post('/login', [AuthController::class, 'login']);
 // stats
 Route::get('/statistics',[DashboardController::class,"getStatistics"]);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
-Route::get('dashboard/activity',[DashboardController::class,"getRecentActivities"]);
-Route::get('dashboard/popular-assessments',[DashboardController::class,'getAssessments']);
+Route::get('/dashboard/activity',[DashboardController::class,"getRecentActivities"]);
+Route::get('/dashboard/popular-assessments',[DashboardController::class,'getAssessments']);
 Route::get('/dashboard/users',[DashboardController::class,'getUsersOverview']);
 Route::get('/dashboard/userPerformance',[DashboardController::class,"getUserPerformance"]);
 

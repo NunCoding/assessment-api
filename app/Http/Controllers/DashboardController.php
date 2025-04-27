@@ -61,11 +61,19 @@ class DashboardController extends Controller
             $assessmentTrend = $this->calculateTrend($assessmentsLastMonth, $assessmentsTaken);
             $questionTrend = $this->calculateTrend($questionsLastMonth, $questionsCreated);
 
-            // Average completion time
+            // Average completion time (CURRENT)
             $avgCompletionSeconds = UserAssessment::whereNotNull('completion_time')->avg('completion_time') ?? 0;
             $minutes = floor($avgCompletionSeconds / 60);
             $seconds = floor($avgCompletionSeconds % 60);
             $avgCompletionFormatted = sprintf('%02d:%02d', $minutes, $seconds);
+
+            // Average completion time (LAST MONTH)
+            $avgCompletionLastMonth = UserAssessment::whereNotNull('completion_time')
+                ->where('created_at', '>=', $lastMonth)
+                ->avg('completion_time') ?? 0;
+
+            // Calculate trend for average completion time
+            $completionTimeTrend = $this->calculateTrend($avgCompletionLastMonth, $avgCompletionSeconds);
 
             // Return OBJECT (not array)
             return [
@@ -87,7 +95,7 @@ class DashboardController extends Controller
                 'avg_completion_time' => [
                     'name' => 'Avg. Completion Time',
                     'value' => $avgCompletionFormatted,
-                    'trend' => 0,
+                    'trend' => $completionTimeTrend,
                 ],
             ];
         });
@@ -125,14 +133,16 @@ class DashboardController extends Controller
                     ->avg('score');
 
                 return [
+                    'id' => $assessment->id,
                     'name' => $assessment->title,
+                    'image' => $assessment->image,
                     'category' => $assessment->category->name ?? 'Unknown',
                     'completions' => $assessment->user_assessments_count,
                     'avg_score' => round($avgScore ?? 0),
                     'questions' => $assessment->questions_count,
                 ];
             })
-            ->sortByDesc('avgScore')
+            ->sortByDesc('avg_score')
             ->values();
 
         return response()->json($assessments);
@@ -140,8 +150,10 @@ class DashboardController extends Controller
 
     public function getUsersOverview(Request $request)
     {
-        $search = $request->query('search');
-        $userQuery = User::withCount('userAssessments');
+        $search = $request->query('name');
+        $userQuery = User::withCount('userAssessments')
+            ->where('id','!=',1);
+
         if ($search) {
             $userQuery->where(function ($query) use ($search) {
                 $query->where('name', 'LIKE', '%' . $search . '%')
@@ -153,6 +165,7 @@ class DashboardController extends Controller
             ->paginate(10)
             ->through(function ($user){
                return [
+                  'id' => $user->id,
                   'name' => $user->name,
                   'email' => $user->email,
                   'role' => ucfirst($user->role),
