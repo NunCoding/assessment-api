@@ -162,6 +162,8 @@ class DashboardController extends Controller
         }
 
         $users = $userQuery
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
             ->paginate(10)
             ->through(function ($user){
                return [
