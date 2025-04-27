@@ -35,6 +35,10 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // category
     Route::get('/category',[CategoryController::class,"index"]);
+
+    // user
+    Route::put('/user/{id}',[AuthController::class,'update']);
+    Route::post('/users',[AuthController::class,'create']);
 });
 
 // upload

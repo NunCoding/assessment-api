@@ -66,4 +66,47 @@ class AuthController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
     }
+
+    public function create(Request $request)
+    {
+        $validated = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'role'  => 'required|in:student,instructor,admin',
+        ]);
+
+        $user = User::create([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'role'     => strtolower($validated['role']), // optional: lowercase
+            'password' => Hash::make('12345678'),          // fixed password
+        ]);
+
+        return response()->json([
+            'message' => 'User created successfully',
+            'user'    => $user,
+        ], 201);
+    }
+
+    public function update(Request $request,$id)
+    {
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+           'name' => 'required|string|max:255',
+           'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+           'role' => 'required|in:student,instructor,admin',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => strtolower($validated['role']),
+            'password' => Hash::make('password123456'),
+        ]);
+
+        return response()->json([
+            'message' => 'User updated successfully',
+        ]);
+    }
 }
