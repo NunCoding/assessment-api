@@ -23,18 +23,18 @@ class QuestionController extends Controller
         $perPage = $request->input('per_page',10);
         $page = $request->input('page',1);
 
-        $query = Question::with('assessment.category');
+        $query = Question::with('assessment');
 
-        if ($request->category){
-            $query->whereHas('assessment.category', fn($q) => $q->where('name', $request->category));
+        if ($request->id){
+            $query->whereHas('assessment', fn($q) => $q->where('id', $request->id));
         }
 
         if ($request->difficulty) {
             $query->whereHas('assessment', fn($q) => $q->where('difficulty', $request->difficulty));
         }
 
-        if ($request->assessment) {
-            $query->whereHas('assessment', fn($q) => $q->where('title', 'like', '%'.$request->assessment.'%'));
+        if ($request->query('title')) {
+            $query->where('title', 'like', '%' . $request->title . '%');
         }
 
         $questions = $query->latest()->paginate($perPage, ['*'], 'page', $page);

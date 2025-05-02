@@ -55,6 +55,15 @@ Route::get('/dashboard/activity',[DashboardController::class,"getRecentActivitie
 Route::get('/dashboard/popular-assessments',[DashboardController::class,'getAssessments']);
 Route::get('/dashboard/users',[DashboardController::class,'getUsersOverview']);
 Route::get('/dashboard/userPerformance',[DashboardController::class,"getUserPerformance"]);
+Route::get('/analytics/weekly-assessments',[DashboardController::class,"getWeeklyAssessmentCompletions"]);
+Route::get('/analytics/average-assessments',[DashboardController::class,"getAverageScoreByCategory"]);
+Route::get('/analytics/completion-rate',[DashboardController::class,"getAssessmentCompletionRates"]);
+
+// user profile
+Route::get('/profile/skill-proficient/{userId}',[DashboardController::class,"getSkillProficiency"]);
+Route::get('/profile/user-assessments/{userId}',[DashboardController::class,"getAssessmentSummary"]);
+Route::get('/profile/user/{userId}',[DashboardController::class,"getUserProfile"]);
+Route::get('/profile/user-activity/{userId}',[DashboardController::class,"getUserRecentActivities"]);
 
 
 
