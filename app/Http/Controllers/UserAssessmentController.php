@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Analytic;
 use App\Models\UserAssessment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserAssessmentController extends Controller
 {
@@ -128,6 +129,21 @@ class UserAssessmentController extends Controller
 
         return response()->json([
             'message' => 'Assessment result submitted successfully.',
+        ]);
+    }
+
+    public function getAssessmentStats()
+    {
+        $totalAssessment = DB::table('assessments')->count();
+        $totalUser = DB::table('user_assessments')
+            ->distinct('user_id')
+            ->count('user_id');
+        $avgScore = DB::table('user_assessments')->avg('score');
+
+        return response()->json([
+            'total_assessment' => $totalAssessment,
+            'total_user' => $totalUser,
+            'avg_score' => round($avgScore,2)
         ]);
     }
 
