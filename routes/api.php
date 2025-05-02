@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('/assessments', [AssessmentController::class, 'store']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
     Route::post('/user-assessment/submit',[UserAssessmentController::class,"submitResult"]);
+    Route::get('/assessment/stats',[UserAssessmentController::class,'getAssessmentStats']);
 
 
     // question
