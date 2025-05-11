@@ -27,7 +27,7 @@ class AssessmentController extends Controller
     // Fetch All Assessments
     public function index()
     {
-        $assessments = Assessment::with(['category', 'questions'])->latest()->get();
+        $assessments = Assessment::with(['category', 'questions','userAssessments'])->latest()->get();
 
         return response()->json([
             'data' => $assessments->map(function ($assessment) {
@@ -38,6 +38,7 @@ class AssessmentController extends Controller
                     'image' => $assessment->image,
                     'category' => $assessment->category->name ?? null,
                     'questions' => $assessment->questions->count(),
+                    'total_taken' => $assessment->userAssessments->count(),
                     'timeEstimate' => $assessment->time_estimate,
                 ];
             })
@@ -71,7 +72,7 @@ class AssessmentController extends Controller
 
 
     public function list(){
-        $listAssessment = Assessment::select('id','title')->get();
+        $listAssessment = Assessment::select('id','title','difficulty')->get();
         return response()->json($listAssessment);
     }
 
@@ -100,6 +101,7 @@ class AssessmentController extends Controller
 
     public function getCategory(){
         $assessments = DB::table('assessments')
+            ->leftJoin('categories','assessments.categories_id','=','categories.id')
             ->select(
                 'assessments.id',
                 'assessments.title',
@@ -109,17 +111,15 @@ class AssessmentController extends Controller
                 'assessments.difficulty',
                 'assessments.time_estimate',
                 'assessments.tags',
+                'categories.name as category_name',
                 DB::raw('(SELECT COUNT(*) FROM user_assessments WHERE user_assessments.assessment_id = assessments.id) as user_count')
             )
-            ->orderByDesc('created_at')
+            ->orderByDesc('assessments.created_at')
             ->get()
             ->map(function ($assessment) {
                 // Helper function to format user count like "12.5k"
                 $formatUserCount = function ($number) {
-                    if ($number >= 1000) {
-                        return number_format($number / 1000, 1) . 'k';
-                    }
-                    return (string) $number;
+                    return (integer) $number;
                 };
 
                 return [
@@ -131,6 +131,7 @@ class AssessmentController extends Controller
                     'difficulty' => $assessment->difficulty ?? 'Unknown',
                     'duration' => (int) $assessment->time_estimate,
                     'tags' => $assessment->tags ? array_map('trim', explode(',', $assessment->tags)) : [],
+                    'category' => $assessment->category_name ?? 'NA',
                     'users' => $formatUserCount($assessment->user_count),
                 ];
             });
