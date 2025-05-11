@@ -14,11 +14,12 @@ class Assessment extends Model
         'title',
         'description',
         'categories_id',
-        'rating',
-        'difficulty',
-        'time_estimate',
-        'image',
         'tags',
+        'time_estimate',
+        'difficulty',
+        'user_id',
+        'slug',
+        'image',
     ];
 
     protected $casts = [
@@ -43,5 +44,9 @@ class Assessment extends Model
     public function userAttempts()
     {
         return $this->hasMany(UserAssessment::class);
+    }
+
+    public function instructor(){
+        return $this->belongsTo(User::class,'user_id');
     }
 }

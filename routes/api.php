@@ -40,6 +40,9 @@ Route::middleware('auth:sanctum')->group(function (){
     // user
     Route::put('/user/{id}',[AuthController::class,'update']);
     Route::post('/users',[AuthController::class,'create']);
+
+    // instructor
+    Route::post('/instructor/assessments',[AssessmentController::class,'store']);
 });
 
 // upload

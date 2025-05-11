@@ -20,20 +20,29 @@ class QuestionController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page',10);
-        $page = $request->input('page',1);
+        $user = auth()->user();
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
 
         $query = Question::with('assessment');
 
-        if ($request->id){
+        // Role-based access
+        if ($user->role === 'instructor') {
+            $query->whereHas('assessment', fn($q) => $q->where('user_id', $user->id));
+        }
+
+        // Filter by assessment ID
+        if ($request->filled('id')) {
             $query->whereHas('assessment', fn($q) => $q->where('id', $request->id));
         }
 
-        if ($request->difficulty) {
+        // Filter by difficulty
+        if ($request->filled('difficulty')) {
             $query->whereHas('assessment', fn($q) => $q->where('difficulty', $request->difficulty));
         }
 
-        if ($request->query('title')) {
+        // Filter by question title
+        if ($request->filled('title')) {
             $query->where('title', 'like', '%' . $request->title . '%');
         }
 
@@ -41,6 +50,7 @@ class QuestionController extends Controller
 
         return QuestionResource::collection($questions);
     }
+
 
     /**
      * Store a newly created resource in storage.
