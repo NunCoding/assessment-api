@@ -6,32 +6,61 @@ use App\Http\Requests\StoreAssessmentRequest;
 use App\Models\Assessment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AssessmentController extends Controller
 {
 
-    public function store(StoreAssessmentRequest $request){
-        $validated = $request->validated();
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'categories_id' => 'required|exists:categories,id',
+            'tags' => 'required|array',
+            'time_estimate' => 'required|integer',
+            'difficulty' => 'required|string',
+            'image' => 'required|string',
+        ]);
 
-        if($request->hasFile('image')){
-            $validated['image'] = $request->file('image')->store('uploads','public');
-        }
+        // Create assessment
+        $assessment = Assessment::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'categories_id' => $validated['categories_id'],
+            'tags' => $validated['tags'] ?? [],
+            'time_estimate' => $validated['time_estimate'] ?? 0,
+            'difficulty' => $validated['difficulty'] ?? null,
+            'user_id' => auth()->id(),
+            'slug' => Str::uuid(),
+            'image' => $validated['image'],
+        ]);
 
-        if (isset($validated['tags']) && is_string($validated['tags'])) {
-            $validated['tags'] = json_decode($validated['tags'], true);
-        }
-        Assessment::create($validated);
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Assessment created successfully.',
+            'share_link' => config('app.frontend_url') . '/take-assessment/' . $assessment->slug,
+        ]);
     }
+
 
     // Fetch All Assessments
     public function index()
     {
-        $assessments = Assessment::with(['category', 'questions','userAssessments'])->latest()->get();
+        $user = auth()->user();
+
+        $query = Assessment::with(['category', 'questions', 'userAssessments'])
+            ->latest();
+
+        // Only show own assessments if the user is an instructor
+        if ($user->role === 'instructor') {
+            $query->where('user_id', $user->id);
+        }
+
+        $assessments = $query->get();
 
         return response()->json([
-            'data' => $assessments->map(function ($assessment) {
-                return [
+            'data' => $assessments->map(function ($assessment) use ($user) {
+                $data = [
                     "id" => $assessment->id,
                     'name' => $assessment->title,
                     'description' => $assessment->description,
@@ -41,7 +70,13 @@ class AssessmentController extends Controller
                     'total_taken' => $assessment->userAssessments->count(),
                     'timeEstimate' => $assessment->time_estimate,
                 ];
-            })
+
+                if (in_array($user->role, ['instructor'])) {
+                    $data['share_link'] = config('app.frontend_url') . '/take-assessment/' . $assessment->slug;
+                }
+
+                return $data;
+            }),
         ]);
     }
 
@@ -71,10 +106,37 @@ class AssessmentController extends Controller
     }
 
 
-    public function list(){
-        $listAssessment = Assessment::select('id','title','difficulty')->get();
-        return response()->json($listAssessment);
+    public function list()
+    {
+        $user = auth()->user();
+
+        $query = Assessment::query();
+
+        if ($user->role === 'instructor') {
+            // Only latest for instructors
+            $assessment = $query->where('user_id', $user->id)
+                ->latest()
+                ->first();
+
+            if (!$assessment) {
+                return response()->json(['message' => 'No assessment found'], 404);
+            }
+
+            return response()->json([
+                [
+                    'id' => $assessment->id,
+                    'title' => $assessment->title,
+                    'difficulty' => $assessment->difficulty,
+                ]
+            ]);
+        }
+
+        // For admin
+        $assessments = $query->latest()->get(['id', 'title', 'difficulty']);
+
+        return response()->json($assessments->toArray());
     }
+
 
     public function topPopularAssessments()
     {
