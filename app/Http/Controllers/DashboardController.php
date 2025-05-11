@@ -17,27 +17,25 @@ class DashboardController extends Controller
 {
     public function getStatistics()
     {
-        $data = Cache::remember('dashboard_statistics', 300, function () {
-            $totalUsers = User::count();
-            $totalAssessments = Assessment::count();
-            $totalCategories = Category::count();
 
-            $passedAssessments = UserAssessment::where('score', '>=', 70)->count();
-            $totalAssessmentsTaken = UserAssessment::count();
+        $totalUsers = User::count();
+        $totalAssessments = Assessment::count();
+        $totalCategories = Category::count();
 
-            $satisfaction = $totalAssessmentsTaken > 0
-                ? round(($passedAssessments / $totalAssessmentsTaken) * 100, 2)
-                : 0;
+        $passedAssessments = UserAssessment::where('score', '>=', 70)->count();
+        $totalAssessmentsTaken = UserAssessment::count();
 
-            return [
-                'total_users' => $totalUsers,
-                'total_assessment' => $totalAssessments,
-                'total_category' => $totalCategories,
-                'satisfaction' => $satisfaction . '%',
-            ];
-        });
+        $satisfaction = $totalAssessmentsTaken > 0
+            ? round(($passedAssessments / $totalAssessmentsTaken) * 100, 2)
+            : 0;
 
-        return response()->json($data);
+        return response()->json([
+            'total_users' => $totalUsers,
+            'total_assessment' => $totalAssessments,
+            'total_category' => $totalCategories,
+            'satisfaction' => $satisfaction . '%',
+        ]);
+
     }
 
     public function getStats()
@@ -124,6 +122,7 @@ class DashboardController extends Controller
                     'id' => $assessment->id,
                     'name' => $assessment->title,
                     'image' => $assessment->image,
+                    'difficulty' => $assessment->difficulty,
                     'category' => $assessment->category->name ?? 'Unknown',
                     'completions' => $assessment->user_assessments_count,
                     'avg_score' => round($avgScore ?? 0),
@@ -169,32 +168,38 @@ class DashboardController extends Controller
     public function getUserPerformance()
     {
         $totalAssessments = Assessment::count();
-        $user = User::with(['userAssessments'],['activityLogs'])
-            ->get()
-            ->map(function ($user) use ($totalAssessments) {
-               $assessmentTaken = $user->userAssessments->count();
-               $avgScore = $assessmentTaken > 0
-                   ? round($user->userAssessments->avg('score'))
-                   : 0;
-                $completionRate = $totalAssessments > 0
-                    ? round(($assessmentTaken / $totalAssessments) * 100)
-                    : 0;
 
-               $lastActivity = optional($user->activityLogs->sortByDesc('created-at')->first())->created_at;
-               $lastActive = $lastActivity
-                   ? Carbon::parse($lastActivity)->diffForHumans()
-                   : 'N/A';
+        $paginatedUsers = User::where('id', '!=', 1)
+            ->with(['userAssessments', 'activityLogs'])
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
-               return [
-                 'name' => $user->name,
-                 'email' => $user->email,
-                 'assessment_token' => $assessmentTaken,
-                 'avg_score' => $avgScore,
-                 'completion_rate' => $completionRate,
-                 'last_active' => $lastActive,
-               ];
-            });
-        return response()->json($user);
+        $paginatedUsers->getCollection()->transform(function ($user) use ($totalAssessments) {
+            $assessmentTaken = $user->userAssessments->count();
+
+            $avgScore = $assessmentTaken > 0
+                ? round($user->userAssessments->avg('score'))
+                : 0;
+
+            $completionRate = $totalAssessments > 0
+                ? round(($assessmentTaken / $totalAssessments) * 100)
+                : 0;
+
+            $lastActivity = optional($user->activityLogs->sortByDesc('created_at')->first())->created_at;
+
+            return [
+                'name' => $user->name,
+                'email' => $user->email,
+                'assessment_taken' => $assessmentTaken,
+                'avg_score' => $avgScore,
+                'completion_rate' => $completionRate,
+                'last_active' => $lastActivity
+                    ? Carbon::parse($lastActivity)->diffForHumans()
+                    : '0',
+            ];
+        });
+
+        return response()->json($paginatedUsers);
     }
 
     public function getWeeklyAssessmentCompletions()
@@ -232,7 +237,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'labels' => array_keys($formattedData),
-            'data' => array_values($formattedData),
+            'dataset' => array_values($formattedData),
         ]);
     }
 
@@ -300,13 +305,13 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function getAssessmentCompletionRates()
+    public function getUserRegistrations()
     {
         $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
         $endOfWeek = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
-        $results = DB::table('user_assessments')
-            ->selectRaw("EXTRACT(DOW FROM created_at)::int AS dow, COUNT(*) AS completions")
+        $results = DB::table('users')
+            ->selectRaw("EXTRACT(DOW FROM created_at)::int AS dow, COUNT(*) AS registrations")
             ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
             ->groupByRaw("EXTRACT(DOW FROM created_at)::int")
             ->orderByRaw("EXTRACT(DOW FROM created_at)::int")
@@ -323,19 +328,19 @@ class DashboardController extends Controller
             0 => 'Sunday',
         ];
 
-        // Fill in missing days with 0
         $data = array_fill_keys(array_values($dowMap), 0);
 
         foreach ($results as $row) {
             $dayName = $dowMap[$row->dow];
-            $data[$dayName] = $row->completions;
+            $data[$dayName] = $row->registrations;
         }
 
         return response()->json([
             'labels' => array_keys($data),
-            'data' => array_values($data),
+            'dataset' => array_values($data),
         ]);
     }
+
 
     public function getSkillProficiency($userId)
     {
