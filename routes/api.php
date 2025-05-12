@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // instructor
     Route::post('/instructor/assessments',[AssessmentController::class,'store']);
+    Route::get('/take-assessment/{slug}', [AssessmentController::class, 'assessmentBySlug']);
+    Route::get('/student/result',[AssessmentController::class,'studentResult']);
 });
 
 // upload

@@ -19,6 +19,7 @@ class Assessment extends Model
         'difficulty',
         'user_id',
         'slug',
+        'expires_at',
         'image',
     ];
 
