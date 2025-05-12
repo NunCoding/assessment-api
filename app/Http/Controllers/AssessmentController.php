@@ -13,6 +13,7 @@ class AssessmentController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -31,8 +32,9 @@ class AssessmentController extends Controller
             'tags' => $validated['tags'] ?? [],
             'time_estimate' => $validated['time_estimate'] ?? 0,
             'difficulty' => $validated['difficulty'] ?? null,
+            'expires_at' => now()->addDay(1),
             'user_id' => auth()->id(),
-            'slug' => Str::uuid(),
+            'slug' => $user->role === 'instructor' ? Str::uuid() : null,
             'image' => $validated['image'],
         ]);
 
@@ -137,6 +139,39 @@ class AssessmentController extends Controller
         return response()->json($assessments->toArray());
     }
 
+    public function assessmentBySlug($slug){
+        $assessment = Assessment::with([
+            'category',
+            'questions.options' => function($query) {
+                $query->orderBy('id');
+            }
+        ])->where('slug',$slug)->firstOrFail();
+
+        // expire after 1 day
+        if ($assessment->expires_at && now()->greaterThan($assessment->expires_at)){
+            return response()->json([
+                'message' => 'This assessment link has expired.'
+            ],403);
+        }
+
+        return response()->json([
+            'id' => $assessment->id,
+            'title' => $assessment->title,
+            'description' => $assessment->description,
+            'category' => $assessment->category->name ?? null,
+            'questions' => $assessment->questions->map(function ($question) {
+                return [
+                    'question' => $question->question,
+                    'options' => $question->options->pluck('option_text'),
+                    'correctAnswer' => $question->options->search(function ($option) {
+                        return $option->is_correct;
+                    }),
+                    'explanation' => $question->explanation ?? null,
+                ];
+            }),
+        ]);
+    }
+
 
     public function topPopularAssessments()
     {
@@ -173,6 +208,7 @@ class AssessmentController extends Controller
                 'assessments.difficulty',
                 'assessments.time_estimate',
                 'assessments.tags',
+                'assessments.slug',
                 'categories.name as category_name',
                 DB::raw('(SELECT COUNT(*) FROM user_assessments WHERE user_assessments.assessment_id = assessments.id) as user_count')
             )
@@ -195,10 +231,22 @@ class AssessmentController extends Controller
                     'tags' => $assessment->tags ? array_map('trim', explode(',', $assessment->tags)) : [],
                     'category' => $assessment->category_name ?? 'NA',
                     'users' => $formatUserCount($assessment->user_count),
+                    'slug' => $assessment->slug,
                 ];
             });
 
         return response()->json($assessments);
+    }
+
+    public function studentResult(){
+        $userId = auth()->id();
+
+        $result = Assessment::where('user_id',$userId)
+            ->whereHas('users',function ($query){
+                $query->where('role','instructor');
+            })->get();
+
+        return response()->json($result);
     }
 
     private function formatNumber($number)
