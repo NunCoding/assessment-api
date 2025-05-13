@@ -240,7 +240,7 @@ class AssessmentController extends Controller
 
     public function studentResult($instructorId)
     {
-        $data = DB::table('user_assessments')
+        $rawData = DB::table('user_assessments')
             ->join('users', 'user_assessments.user_id', '=', 'users.id')
             ->join('assessments', 'user_assessments.assessment_id', '=', 'assessments.id')
             ->select(
@@ -249,16 +249,20 @@ class AssessmentController extends Controller
                 'users.email',
                 'assessments.title as assessment_name',
                 'user_assessments.score',
-                'user_assessments.completion_time',
-                'user_assessments.created_at'
+                'user_assessments.completion_time as time_completed',
+                'user_assessments.created_at as submit_at'
             )
-            ->where('assessments.user_id', $instructorId) // filter by instructor's assessments
+            ->where('assessments.user_id', $instructorId)
             ->get();
-
+        $data = $rawData->map(function ($item) {
+            $item->grade = $this->getGrade($item->score);
+            $item->submit_at = $item->submitted_at->format('Y-m-d');
+            return $item;
+        });
         return response()->json($data);
     }
 
-
+    // helper function
     private function formatNumber($number)
     {
         if ($number >= 1000000) {
@@ -267,6 +271,16 @@ class AssessmentController extends Controller
             return round($number / 1000, 1) . 'k';
         }
         return (string) $number;
+    }
+    function getGrade($score)
+    {
+        if ($score >= 95) return 'A+';
+        if ($score >= 90) return 'A';
+        if ($score >= 80) return 'B+';
+        if ($score >= 70) return 'B';
+        if ($score >= 60) return 'C+';
+        if ($score >= 50) return 'C';
+        return 'F';
     }
 
 
