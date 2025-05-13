@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Message;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -24,5 +25,22 @@ class MessageController extends Controller
         ]);
 
         return response()->noContent();
+    }
+
+    public function show($id){
+        $message = DB::table('messages')
+            ->join('users', 'messages.receiver_id', '=', 'users.id')
+            ->where('messages.id', $id)
+            ->get()
+            ->map(function($item){
+                return [
+                    'id' => $item->id,
+                    'receiver' => $item->receiver->name,
+                    'email' => $item->receiver->email,
+                    'message' => $item->message,
+                    'link' => $item->link,
+                ];
+            });
+        return response()->json($message);
     }
 }
