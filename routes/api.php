@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\UserAssessmentController;
 use Illuminate\Http\Request;
@@ -45,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('/instructor/assessments',[AssessmentController::class,'store']);
     Route::get('/take-assessment/{slug}', [AssessmentController::class, 'assessmentBySlug']);
     Route::get('/student/{instructorId}/result',[AssessmentController::class,'studentResult']);
+
+    // student
+    Route::post('/student/submitResult',[MessageController::class,'store']);
 });
 
 // upload
