@@ -161,7 +161,7 @@ class AssessmentController extends Controller
             'category' => $assessment->category->name ?? null,
             'questions' => $assessment->questions->map(function ($question) {
                 return [
-                    'question' => $question->question,
+                    'question' => $question->title,
                     'options' => $question->options->pluck('option_text'),
                     'correctAnswer' => $question->options->search(function ($option) {
                         return $option->is_correct;
@@ -238,16 +238,26 @@ class AssessmentController extends Controller
         return response()->json($assessments);
     }
 
-    public function studentResult(){
-        $userId = auth()->id();
+    public function studentResult($instructorId)
+    {
+        $data = DB::table('user_assessments')
+            ->join('users', 'user_assessments.user_id', '=', 'users.id')
+            ->join('assessments', 'user_assessments.assessment_id', '=', 'assessments.id')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'assessments.title as assessment_name',
+                'user_assessments.score',
+                'user_assessments.completion_time',
+                'user_assessments.created_at'
+            )
+            ->where('assessments.user_id', $instructorId) // filter by instructor's assessments
+            ->get();
 
-        $result = Assessment::where('user_id',$userId)
-            ->whereHas('users',function ($query){
-                $query->where('role','instructor');
-            })->get();
-
-        return response()->json($result);
+        return response()->json($data);
     }
+
 
     private function formatNumber($number)
     {
