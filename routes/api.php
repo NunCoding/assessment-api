@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // student
     Route::post('/student/submitResult',[MessageController::class,'store']);
+    Route::get('/student/messages/{id}',[MessageController::class,'show']);
 });
 
 // upload
