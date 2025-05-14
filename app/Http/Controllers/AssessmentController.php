@@ -239,9 +239,11 @@ class AssessmentController extends Controller
         return response()->json($assessments);
     }
 
-    public function studentResult($instructorId)
+    public function studentResult(Request $request, $instructorId)
     {
-        $rawData = DB::table('user_assessments')
+        $filter = $request->input('submit_between');
+
+        $query = DB::table('user_assessments')
             ->join('users', 'user_assessments.user_id', '=', 'users.id')
             ->join('assessments', 'user_assessments.assessment_id', '=', 'assessments.id')
             ->select(
@@ -253,15 +255,29 @@ class AssessmentController extends Controller
                 'user_assessments.completion_time as time_completed',
                 'user_assessments.created_at as submit_at'
             )
-            ->where('assessments.user_id', $instructorId)
-            ->get();
+            ->where('assessments.user_id', $instructorId);
+
+        if ($filter) {
+            $date = explode(',',$filter);
+            if (count($date) === 2){
+                $startDate = Carbon::createFromFormat('d-m-Y',trim($date[0]))->startOfDay();
+                $endDate = Carbon::createFromFormat('d-m-Y',trim($date[2]))->endOfDay();
+
+                $query->whereBetween('user_assessments.created_at',[$startDate,$endDate]);
+            }
+        }
+
+        $rawData = $query->get();
+
         $data = $rawData->map(function ($item) {
             $item->grade = $this->getGrade($item->score);
             $item->submit_at = Carbon::parse($item->submit_at);
             return $item;
         });
+
         return response()->json($data);
     }
+
 
     // helper function
     private function formatNumber($number)
