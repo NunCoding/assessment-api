@@ -29,14 +29,14 @@ class MessageController extends Controller
 
     public function show($id){
         $message = DB::table('messages')
-            ->join('users', 'messages.receiver_id', '=', 'users.id')
-            ->where('messages.id', $id)
+            ->join('users', 'messages.sender_id', '=', 'users.id')
+            ->where('messages.receiver_id', $id)
             ->get()
             ->map(function($item){
                 return [
                     'id' => $item->id,
-                    'receiver' => $item->receiver->name,
-                    'email' => $item->receiver->email,
+                    'instructor_name' => $item->name,
+                    'email' => $item->email,
                     'message' => $item->message,
                     'link' => $item->link,
                 ];

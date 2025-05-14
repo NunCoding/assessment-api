@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAssessmentRequest;
 use App\Models\Assessment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -256,7 +257,7 @@ class AssessmentController extends Controller
             ->get();
         $data = $rawData->map(function ($item) {
             $item->grade = $this->getGrade($item->score);
-            $item->submit_at = $item->submitted_at->format('Y-m-d');
+            $item->submit_at = Carbon::parse($item->submit_at);
             return $item;
         });
         return response()->json($data);
