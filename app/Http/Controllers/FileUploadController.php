@@ -12,12 +12,13 @@ class FileUploadController extends Controller
             'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $file = $request->file('file'); // Update to 'file'
+        $file = $request->file('file');
         $fileName = time() . '.' . $file->getClientOriginalExtension();
-        $file->storeAs('uploads', $fileName, 'public');
+        $file->move(public_path('uploads'), $fileName);
 
         return response()->json([
-            'url' => asset('storage/uploads/' . $fileName),
+            'url' => asset('uploads/' . $fileName),
         ], 200);
     }
+
 }
