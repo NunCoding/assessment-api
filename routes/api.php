@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AIController;
+use App\Http\Controllers\AiRecommendationController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
@@ -27,6 +29,10 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('/user-assessment/submit',[UserAssessmentController::class,"submitResult"]);
     Route::get('/assessment/stats',[UserAssessmentController::class,'getAssessmentStats']);
 
+    // ai
+    // routes/api.php
+    Route::get('/recommendations/{id}/recommend', [AIController::class, 'show']);
+
 
     // question
     Route::get('/assessment/{assessmentId}/question',[QuestionController::class,'show']);
@@ -51,6 +57,8 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('/student/submitResult',[MessageController::class,'store']);
     Route::get('/student/messages/{id}',[MessageController::class,'show']);
 });
+Route::get('/recommendations', [AIController::class, 'index']);
+
 
 // upload
 Route::post('/upload',[FileUploadController::class,'upload']);
