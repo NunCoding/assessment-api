@@ -6,7 +6,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/migrate', function () {
-    Artisan::call('migrate', ['--force' => true]);
-    return 'Migrations have been run.';
-});
+//Route::get('/migrate', function () {
+//    Artisan::call('migrate', ['--force' => true]);
+//    return 'Migrations have been run.';
+//});
