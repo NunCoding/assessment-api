@@ -23,7 +23,10 @@ class StudentSkillAnalysisService
     public function generatePrompt($weakSkills)
     {
         $skillsList = collect($weakSkills)->pluck('skill')->join(', ');
-        return "A student is weak in: $skillsList. Recommend 1–5 free resource, beginner-friendly resources for each skill (YouTube, websites, or free courses) with currently resource. Keep each description short and helpful.For help them improve their weakness skills.";
+        return "A student is weak in the following skills: $skillsList.
+                For each skill, recommend 1 to 5 beginner-friendly and free resources (such as YouTube videos, websites, or free courses) that are currently available.
+                Keep each description short, helpful, and focused on improving the specific skill.
+                The goal is to help the student strengthen all of their weak areas.";
     }
 
     public function getRecommendationsFromGemini($prompt)

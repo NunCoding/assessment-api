@@ -27,7 +27,6 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('/assessments', [AssessmentController::class, 'store']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
     Route::post('/user-assessment/submit',[UserAssessmentController::class,"submitResult"]);
-    Route::get('/assessment/stats',[UserAssessmentController::class,'getAssessmentStats']);
 
     // ai
     // routes/api.php
@@ -68,6 +67,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 // stats
+Route::get('/assessment/stats',[UserAssessmentController::class,'getAssessmentStats']);
 Route::get('/statistics',[DashboardController::class,"getStatistics"]);
 Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 Route::get('/dashboard/activity',[DashboardController::class,"getRecentActivities"]);
