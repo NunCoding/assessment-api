@@ -6,6 +6,7 @@ use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\QuestionController;
@@ -46,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function (){
     // user
     Route::put('/user/{id}',[AuthController::class,'update']);
     Route::post('/users',[AuthController::class,'create']);
+    Route::post('/user/feedback',[FeedbackController::class,'store']);
 
     // instructor
     Route::post('/instructor/assessments',[AssessmentController::class,'store']);
