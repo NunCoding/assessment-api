@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function (){
 
     // user
     Route::put('/user/{id}',[AuthController::class,'update']);
+    Route::get('/user/feedback/{userId}',[FeedbackController::class,'show']);
     Route::post('/users',[AuthController::class,'create']);
     Route::post('/user/feedback',[FeedbackController::class,'store']);
 
@@ -67,6 +68,7 @@ Route::post('/upload',[FileUploadController::class,'upload']);
 // user
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/feedback/user', [FeedbackController::class, 'index']);
 
 // stats
 Route::get('/assessment/stats',[UserAssessmentController::class,'getAssessmentStats']);
