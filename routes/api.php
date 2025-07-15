@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::get('/assessments/list',[AssessmentController::class,'list']);
 //    Route::get('/assessments/{id}', [AssessmentController::class, 'show']);
     Route::post('/assessments', [AssessmentController::class, 'store']);
+    Route::put('/assessments/{id}', [AssessmentController::class, 'update']);
     Route::get('/assessment/{id}/task',[AssessmentController::class,"show"]);
     Route::post('/user-assessment/submit',[UserAssessmentController::class,"submitResult"]);
 

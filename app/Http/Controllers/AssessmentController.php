@@ -69,9 +69,12 @@ class AssessmentController extends Controller
                     'description' => $assessment->description,
                     'image' => $assessment->image,
                     'category' => $assessment->category->name ?? null,
+                    'categories_id' => $assessment->category->id ?? null,
                     'questions' => $assessment->questions->count(),
+                    'difficulty' => $assessment->difficulty,
+                    'tags' => $assessment->tags ?? [],
                     'total_taken' => $assessment->userAssessments->count(),
-                    'timeEstimate' => $assessment->time_estimate,
+                    'time_estimate' => $assessment->time_estimate,
                 ];
 
                 if (in_array($user->role, ['instructor'])) {
@@ -106,6 +109,32 @@ class AssessmentController extends Controller
                 ];
             })
         ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'categories_id' => 'required|exists:categories,id',
+            'tags' => 'required|array',
+            'time_estimate' => 'required|integer',
+            'difficulty' => 'required|string',
+            'image' => 'required|string',
+        ]);
+
+        $assessment = Assessment::where('id', $id)->firstOrFail();
+
+        $assessment->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'categories_id' => $validated['categories_id'],
+            'tags' => $validated['tags'],
+            'time_estimate' => $validated['time_estimate'],
+            'difficulty' => $validated['difficulty'],
+            'image' => $validated['image'],
+        ]);
+        return response()->noContent();
     }
 
 
